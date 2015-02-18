@@ -1,25 +1,5 @@
 PHP7 AST exporer
 
-**NOTE: PHP7 NEEDS A VERY SMALL PATCH IN ORDER FOR THIS TO COMPILE**
-
-When compiling php7-master, first edit `Zend/zend_globals_macros.h` and add `ZEND_API` to the line which reads: `int zendparse(void);`.  You'll find this somewhere around line 39 (depending if other patches have landed).  If you prefer a patch file, use this:
-
-```
-diff --git a/Zend/zend_globals_macros.h b/Zend/zend_globals_macros.h
-index b8fb763..190905f 100644
---- a/Zend/zend_globals_macros.h
-+++ b/Zend/zend_globals_macros.h
-@@ -36,7 +36,7 @@ BEGIN_EXTERN_C()
- # define CG(v) (compiler_globals.v)
- extern ZEND_API struct _zend_compiler_globals compiler_globals;
- #endif
--int zendparse(void);
-+ZEND_API int zendparse(void);
- 
- 
- /* Executor */
-```
-
 ### The API
 
 ```
