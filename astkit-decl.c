@@ -35,22 +35,28 @@ static PHP_METHOD(AstKitDecl, getChild) {
 
 /* {{{ proto int AstKitDecl::getLineEnd() */
 static PHP_METHOD(AstKitDecl, getLineEnd) {
-	astkit_object* objval = ASTKIT_FETCH_OBJ(getThis());
-	zend_ast_decl* declNode = (zend_ast_decl*)objval->node;
+	astkit_object* objval;
+	zend_ast_decl* declNode;
+	objval = ASTKIT_FETCH_OBJ(getThis());
+	declNode = (zend_ast_decl*)objval->node;
 	RETURN_LONG(declNode->end_lineno);
 } /* }}} */
 
 /* {{{ proto int AstKitDecl::geFlags() */
 static PHP_METHOD(AstKitDecl, getFlags) {
-	astkit_object* objval = ASTKIT_FETCH_OBJ(getThis());
-	zend_ast_decl* declNode = (zend_ast_decl*)objval->node;
+	astkit_object* objval;
+	zend_ast_decl* declNode;
+	objval = ASTKIT_FETCH_OBJ(getThis());
+	declNode = (zend_ast_decl*)objval->node;
 	RETURN_LONG(declNode->flags);
 } /* }}} */
 
 /* {{{ proto string AstKitDecl::getDocComment() */
 static PHP_METHOD(AstKitDecl, getDocComment) {
-	astkit_object* objval = ASTKIT_FETCH_OBJ(getThis());
-	zend_ast_decl* declNode = (zend_ast_decl*)objval->node;
+	astkit_object* objval;
+	zend_ast_decl* declNode;
+	objval = ASTKIT_FETCH_OBJ(getThis());
+	declNode = (zend_ast_decl*)objval->node;
 	if (declNode->doc_comment) {
 		RETURN_STRINGL(declNode->doc_comment->val, declNode->doc_comment->len);
 	} else {
@@ -60,50 +66,64 @@ static PHP_METHOD(AstKitDecl, getDocComment) {
 
 /* {{{ proto string AstKitDecl::getName() */
 static PHP_METHOD(AstKitDecl, getName) {
-	astkit_object* objval = ASTKIT_FETCH_OBJ(getThis());
-	zend_ast_decl* declNode = (zend_ast_decl*)objval->node;
+	astkit_object* objval;
+	zend_ast_decl* declNode;
+	objval = ASTKIT_FETCH_OBJ(getThis());
+	declNode = (zend_ast_decl*)objval->node;
 	RETURN_STRINGL(declNode->name->val, declNode->name->len);
 } /* }}} */
 
 /* {{{ proto bool AstKitDecl::hasParams() */
 static PHP_METHOD(AstKitDecl, hasParams) {
-	astkit_object* objval = ASTKIT_FETCH_OBJ(getThis());
-	zend_ast_decl* declNode = (zend_ast_decl*)objval->node;
+	astkit_object* objval;
+	zend_ast_decl* declNode;
+	objval = ASTKIT_FETCH_OBJ(getThis());
+	declNode = (zend_ast_decl*)objval->node;
 	RETURN_BOOL(declNode->child[0]);
 } /* }}} */
 
 /* {{{ proto mixed AstKitDecl::getParams() */
 static PHP_METHOD(AstKitDecl, getParams) {
-	astkit_object* objval = ASTKIT_FETCH_OBJ(getThis());
-	zend_ast_decl* declNode = (zend_ast_decl*)objval->node;
+	astkit_object* objval;
+	zend_ast_decl* declNode;
+	objval = ASTKIT_FETCH_OBJ(getThis());
+	declNode = (zend_ast_decl*)objval->node;
 	astkit_create_object(return_value, declNode->child[0], objval->tree);
 } /* }}} */
 
 /* {{{ proto bool AstKitDecl::hasUse() */
 static PHP_METHOD(AstKitDecl, hasUse) {
-	astkit_object* objval = ASTKIT_FETCH_OBJ(getThis());
-	zend_ast_decl* declNode = (zend_ast_decl*)objval->node;
+	astkit_object* objval;
+	zend_ast_decl* declNode;
+	objval = ASTKIT_FETCH_OBJ(getThis());
+	declNode = (zend_ast_decl*)objval->node;
 	RETURN_BOOL(declNode->child[1]);
 } /* }}} */
 
 /* {{{ proto mixed AstKitDecl::getUse() */
 static PHP_METHOD(AstKitDecl, getUse) {
-	astkit_object* objval = ASTKIT_FETCH_OBJ(getThis());
-	zend_ast_decl* declNode = (zend_ast_decl*)objval->node;
+	astkit_object* objval;
+	zend_ast_decl* declNode;
+	objval = ASTKIT_FETCH_OBJ(getThis());
+	declNode = (zend_ast_decl*)objval->node;
 	astkit_create_object(return_value, declNode->child[1], objval->tree);
 } /* }}} */
 
 /* {{{ proto bool AstKitDecl::hasStatements() */
 static PHP_METHOD(AstKitDecl, hasStatements) {
-	astkit_object* objval = ASTKIT_FETCH_OBJ(getThis());
-	zend_ast_decl* declNode = (zend_ast_decl*)objval->node;
+	astkit_object* objval;
+	zend_ast_decl* declNode;
+	objval = ASTKIT_FETCH_OBJ(getThis());
+	declNode = (zend_ast_decl*)objval->node;
 	RETURN_BOOL(declNode->child[2]);
 } /* }}} */
 
 /* {{{ proto mixed AstKitDecl::getStatements() */
 static PHP_METHOD(AstKitDecl, getStatements) {
-	astkit_object* objval = ASTKIT_FETCH_OBJ(getThis());
-	zend_ast_decl* declNode = (zend_ast_decl*)objval->node;
+	astkit_object* objval;
+	zend_ast_decl* declNode;
+	objval = ASTKIT_FETCH_OBJ(getThis());
+	declNode = (zend_ast_decl*)objval->node;
 	astkit_create_object(return_value, declNode->child[2], objval->tree);
 } /* }}} */
 
