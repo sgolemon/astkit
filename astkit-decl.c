@@ -12,9 +12,11 @@ ZEND_BEGIN_ARG_INFO(AstKitDecl_getChild_arginfo, 0)
 	ZEND_ARG_INFO(0, child)
 ZEND_END_ARG_INFO()
 static PHP_METHOD(AstKitDecl, getChild) {
-	astkit_object* objval = ASTKIT_FETCH_OBJ(getThis());
-	zend_ast_decl* declNode = (zend_ast_decl*)objval->node;
+	astkit_object* objval;
+	zend_ast_decl* declNode;
 	zend_long child;
+	objval = ASTKIT_FETCH_OBJ(getThis());
+	declNode = (zend_ast_decl*)objval->node;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS(), "l", &child) == FAILURE) {
 		return;

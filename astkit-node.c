@@ -175,9 +175,11 @@ ZEND_BEGIN_ARG_INFO(AstKit_getChild_arginfo, 0)
 	ZEND_ARG_INFO(0, child)
 ZEND_END_ARG_INFO()
 static PHP_METHOD(AstKit, getChild) {
-	astkit_object* objval = ASTKIT_FETCH_OBJ(getThis());
-	int numChildren = objval->node->kind >> ZEND_AST_NUM_CHILDREN_SHIFT;
+	astkit_object* objval;
+	int numChildren;
 	zend_long child;
+	objval = ASTKIT_FETCH_OBJ(getThis());
+	numChildren = objval->node->kind >> ZEND_AST_NUM_CHILDREN_SHIFT;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS(), "l", &child) == FAILURE) {
 		return;
