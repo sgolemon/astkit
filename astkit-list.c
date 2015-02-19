@@ -4,8 +4,10 @@ zend_class_entry* astkit_list_ce = NULL;
 
 /* {{{ proto int AstKitList::numChildren() */
 static PHP_METHOD(AstKitList, numChildren) {
-	astkit_object* objval = ASTKIT_FETCH_OBJ(getThis());
-	zend_ast_list* node = (zend_ast_list*)objval->node;
+	astkit_object* objval;
+	zend_ast_list* node;
+	objval = ASTKIT_FETCH_OBJ(getThis());
+	node = (zend_ast_list*)objval->node;
 	RETURN_LONG(node->children);
 } /* }}} */
 
@@ -14,9 +16,11 @@ ZEND_BEGIN_ARG_INFO(AstKitList_getChild_arginfo, 0)
 	ZEND_ARG_INFO(0, child)
 ZEND_END_ARG_INFO()
 static PHP_METHOD(AstKitList, getChild) {
-	astkit_object* objval = ASTKIT_FETCH_OBJ(getThis());
-	zend_ast_list* listNode = (zend_ast_list*)objval->node;
+	astkit_object* objval;
+	zend_ast_list* listNode;
 	zend_long child;
+	objval = ASTKIT_FETCH_OBJ(getThis());
+	listNode = (zend_ast_list*)objval->node;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS(), "l", &child) == FAILURE) {
 		return;

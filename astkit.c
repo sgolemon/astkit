@@ -40,6 +40,7 @@ static void astkit_create_object_unexpected(zval* obj, zend_ast* node) {
 }
 
 void astkit_create_object(zval* obj, zend_ast* node, astkit_tree* tree) {
+	astkit_object* objval;
 	zend_class_entry *ce = NULL;
 	if (!node) {
 		ZVAL_NULL(obj);
@@ -59,7 +60,6 @@ void astkit_create_object(zval* obj, zend_ast* node, astkit_tree* tree) {
 			astkit_create_object_unexpected(obj, node);
 	}
 
-	astkit_object* objval;
 	object_init_ex(obj, ce);
 	objval = ASTKIT_FETCH_OBJ(obj);
 	objval->node = node;
