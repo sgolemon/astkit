@@ -1,0 +1,8 @@
+// $Id$
+// vim:ft=javascript
+
+ARG_ENABLE("astkit", "whether to enable astkit support", "no");
+
+if (PHP_ASTKIT != "no") {
+	EXTENSION("astkit", "astkit.c astkit-node.c astkit-list.c astkit-decl.c");
+}
