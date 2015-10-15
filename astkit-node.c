@@ -116,12 +116,12 @@ static PHP_METHOD(AstKit, parseFile) {
 	CG(ast_arena) = zend_arena_create(1024 * 32);
 	zend_save_lexical_state(&original_lex_state);
 	parse_result = zendparse();
-	zend_restore_lexical_state(&original_lex_state);
-	zend_destroy_file_handle(&file_handle);
 	if (parse_result != 0) {
 		/* parse error */
 		zend_ast_destroy(CG(ast));
 		zend_arena_destroy(CG(ast_arena));
+		zend_restore_lexical_state(&original_lex_state);
+		zend_destroy_file_handle(&file_handle);
 		RETURN_FALSE;
 	}
 
@@ -137,6 +137,8 @@ static PHP_METHOD(AstKit, parseFile) {
 
 	CG(ast) = NULL;
 	CG(ast_arena) = NULL;
+	zend_restore_lexical_state(&original_lex_state);
+	zend_destroy_file_handle(&file_handle);
 	astkit_create_object(return_value, tree->root, tree);
 } /* }}} */
 
