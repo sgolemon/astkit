@@ -2,6 +2,23 @@
 
 zend_class_entry* astkit_list_ce = NULL;
 
+/* {{{ proto void AstKitList::__construct() */
+static PHP_METHOD(AstKitList, __construct) {
+	zval *thz = getThis();
+	astkit_object* objval = ASTKIT_FETCH_OBJ(thz);
+	zend_arena* old_arena = CG(ast_arena);
+
+	CG(ast_arena) = zend_arena_create(32 * 1024);
+	objval->node = zend_ast_create_list(0, ZEND_AST_STMT_LIST);
+	objval->tree = emalloc(sizeof(astkit_tree));
+	objval->tree->root = objval->node;
+	objval->tree->arena = CG(ast_arena);
+	objval->tree->refcount = 1;
+
+	CG(ast_arena) = old_arena;
+	zend_hash_index_add(&ASTKITG(cache), (zend_ulong)objval->node, thz);
+} /* }}} */
+
 /* {{{ proto int AstKitList::numChildren() */
 static PHP_METHOD(AstKitList, numChildren) {
 	astkit_object* objval = ASTKIT_FETCH_OBJ(getThis());
@@ -32,6 +49,7 @@ static PHP_METHOD(AstKitList, getChild) {
 } /* }}} */
 
 static zend_function_entry astkit_list_methods[] = {
+	PHP_ME(AstKitList, __construct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
 	PHP_ME(AstKitList, numChildren, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(AstKitList, getChild, AstKitList_getChild_arginfo, ZEND_ACC_PUBLIC)
 	PHP_FE_END
