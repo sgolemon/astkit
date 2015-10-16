@@ -225,12 +225,78 @@ static zend_function_entry astkit_node_methods[] = {
 	PHP_FE_END
 };
 
+/* Can't use zend_ast_copy() because it uses emalloc instead of zend_arena_alloc
+ * and it doesn't handle copying declarations.
+ */
+static inline size_t zend_ast_size(uint32_t children) {
+        return sizeof(zend_ast) - sizeof(zend_ast *) + sizeof(zend_ast *) * children;
+}
+static inline size_t zend_ast_list_size(uint32_t children) {
+        return sizeof(zend_ast_list) - sizeof(zend_ast *) + sizeof(zend_ast *) * children;
+}
+zend_ast* astkit_ast_copy(zend_ast* ast) {
+	if (ast == NULL) {
+		return NULL;
+	} else if (ast->kind == ZEND_AST_ZVAL) {
+		zend_ast_zval *new = zend_arena_alloc(&CG(ast_arena), sizeof(zend_ast_zval));
+		*new = *((zend_ast_zval*)ast);
+		zval_copy_ctor(&new->val);
+		return (zend_ast*)new;
+	} else if (ast->kind == ZEND_AST_ZNODE) {
+		php_error_docref(NULL, E_WARNING, "Encountered unexpected AST_ZNODE");
+		return NULL;
+	} else if (zend_ast_is_list(ast)) {
+		zend_ast_list *list = zend_ast_get_list(ast);
+		zend_ast_list *new = zend_arena_alloc(&CG(ast_arena), zend_ast_list_size(list->children));
+		uint32_t i;
+		*new = *list;
+		for (i = 0; i < new->children; ++i) {
+			new->child[i] = astkit_ast_copy(list->child[i]);
+		}
+		return (zend_ast*)new;
+	} else if (ast->kind < (1 << ZEND_AST_IS_LIST_SHIFT)) {
+		uint32_t i;
+		zend_ast_decl *decl = (zend_ast_decl*)ast;
+		zend_ast_decl *new = zend_arena_alloc(&CG(ast_arena), sizeof(zend_ast_decl));
+		*new = *decl;
+		if (new->doc_comment) zend_string_addref(new->doc_comment);
+		if (new->name) zend_string_addref(new->name);
+		for (i = 0; i < 4; i++) {
+			new->child[i] = astkit_ast_copy(decl->child[i]);
+		}
+		return (zend_ast*)new;
+	} else {
+		uint32_t i, children = zend_ast_get_num_children(ast);
+		zend_ast *new = zend_arena_alloc(&CG(ast_arena), zend_ast_size(children));
+		*new = *ast;
+		for (i = 0; i < children; i++) {
+			new->child[i] = astkit_ast_copy(ast->child[i]);
+		}
+		return new;
+	}
+}
+
 static zend_object* astkit_node_create(zend_class_entry* ce) {
-	astkit_object* object = emalloc(sizeof(astkit_object));
+	astkit_object* object = ecalloc(1, sizeof(astkit_object));
 	zend_object_std_init(&(object->std), ce);
 	object->std.handlers = &astkit_object_handlers;
 	object_properties_init(&(object->std), ce);
 	return (zend_object*)object;
+}
+
+static zend_object* astkit_node_clone(zval *srcObj) {
+	zend_arena *old_arena = CG(ast_arena);
+	astkit_object* src = ASTKIT_FETCH_OBJ(srcObj);
+	astkit_object* dest = (astkit_object*)astkit_node_create(Z_OBJCE_P(srcObj));
+	zend_objects_clone_members(&(dest->std), &(src->std));
+
+	dest->tree = emalloc(sizeof(astkit_tree));
+	dest->tree->arena = CG(ast_arena) = zend_arena_create(1024 * 32);
+	dest->tree->refcount = 1;
+	dest->tree->root = dest->node = astkit_ast_copy(src->node);
+
+	CG(ast_arena) = old_arena;
+	return (zend_object*)dest;
 }
 
 static void astkit_node_free(zend_object* obj) {
@@ -250,6 +316,7 @@ int astkit_node_minit(INIT_FUNC_ARGS) {
 
 	memcpy(&astkit_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	astkit_object_handlers.free_obj = astkit_node_free;
+	astkit_object_handlers.clone_obj = astkit_node_clone;
 
 	INIT_CLASS_ENTRY(ce, "AstKit", astkit_node_methods);
 	astkit_node_ce = zend_register_internal_class(&ce);
