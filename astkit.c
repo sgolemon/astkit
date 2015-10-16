@@ -75,12 +75,30 @@ PHP_MINIT_FUNCTION(astkit) {
 	       ? SUCCESS : FAILURE;
 } /* }}} */
 
+/* {{{ PHP_MSHUTDOWN_FUNCTION */
+PHP_MSHUTDOWN_FUNCTION(astkit) {
+	return ((astkit_node_mshutdown(SHUTDOWN_FUNC_ARGS_PASSTHRU) == SUCCESS))
+	       ? SUCCESS : FAILURE;
+} /* }}} */
+
 /* {{{ PHP_MINFO_FUNCTION */
 PHP_MINFO_FUNCTION(astkit) {
 	php_info_print_table_start();
 	php_info_print_table_row(2, "astkit support", "enabled");
 	php_info_print_table_end();
 } /* }}} */
+
+ZEND_DECLARE_MODULE_GLOBALS(astkit);
+
+/* {{{ PHP_GINIT_FUNCTION */
+static PHP_GINIT_FUNCTION(astkit) {
+#if defined(COMPILE_DL_ASTKIT) && defined(ZTS)
+	ZEND_TSRMLS_CACHE_UPDATE();
+#endif
+	astkit_globals->hijack_ast = NULL;
+	astkit_globals->hijack_ast_arena = NULL;
+}
+/* }}} */
 
 /* {{{ astkit_module_entry
  */
@@ -89,12 +107,16 @@ zend_module_entry astkit_module_entry = {
 	"astkit",
 	NULL, /* functions */
 	PHP_MINIT(astkit),
-	NULL, /* MSHUTDOWN */
+	PHP_MSHUTDOWN(astkit),
 	NULL, /* RINIT */
 	NULL, /* RSHUTDOWN */
 	PHP_MINFO(astkit),
 	"7.0.0-dev",
-	STANDARD_MODULE_PROPERTIES
+	PHP_MODULE_GLOBALS(astkit),
+	PHP_GINIT(astkit),
+	NULL, /* GSHUTDOWN */
+	NULL, /* RPOSTSHUTDOWN */
+	STANDARD_MODULE_PROPERTIES_EX
 };
 /* }}} */
 

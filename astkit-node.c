@@ -209,6 +209,22 @@ static PHP_METHOD(AstKit, export) {
 }
 /* }}} */
 
+/* {{{ proto mixed AstKit::execute() */
+static PHP_METHOD(AstKit, execute) {
+	astkit_object* objval = ASTKIT_FETCH_OBJ(getThis());
+
+	zend_arena *old_arena = CG(ast_arena);
+
+	ASTKITG(hijack_ast_arena) = CG(ast_arena) = zend_arena_create(32 * 1024);
+	ASTKITG(hijack_ast) = astkit_ast_copy(objval->node);
+
+	CG(ast_arena) = old_arena;
+
+	char *eval_name = zend_make_compiled_string_description("AstKit::execute");
+	zend_eval_string("", return_value, eval_name);
+	efree(eval_name);
+} /* }}} */
+
 static zend_function_entry astkit_node_methods[] = {
 	PHP_ME(AstKit, kindName, AstKind_kindName_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
 	PHP_ME(AstKit, parseString, AstKind_parseString_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
@@ -222,6 +238,7 @@ static zend_function_entry astkit_node_methods[] = {
 	PHP_ME(AstKit, getChild, AstKit_getChild_arginfo, ZEND_ACC_PUBLIC)
 
 	PHP_ME(AstKit, export, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(AstKit, execute, NULL, ZEND_ACC_PUBLIC)
 	PHP_FE_END
 };
 
@@ -311,6 +328,35 @@ static void astkit_node_free(zend_object* obj) {
 	zend_object_std_dtor(obj);
 }
 
+static zend_op_array *(*old_compile_string)(zval*, char*);
+static zend_op_array *astkit_compile_string(zval* source_string, char* filename) {
+	if (!ASTKITG(hijack_ast)) {
+		return old_compile_string(source_string, filename);
+	}
+
+	/* Hijack in progress, bypass any opcache */
+	return compile_string(source_string, filename);
+}
+
+static void (*old_ast_process)(zend_ast*);
+static void astkit_ast_process(zend_ast* ast) {
+	ZEND_ASSERT(ast == CG(ast));
+	if (ASTKITG(hijack_ast)) {
+		/* Destroy the dummy ast, swap in ours, and release it */
+		zend_ast_destroy(CG(ast));
+		zend_arena_destroy(CG(ast_arena));
+
+		CG(ast) = ASTKITG(hijack_ast);
+		CG(ast_arena) = ASTKITG(hijack_ast_arena);
+
+		ASTKITG(hijack_ast) = NULL;
+		ASTKITG(hijack_ast_arena) = NULL;
+	}
+	if (old_ast_process) {
+		old_ast_process(CG(ast));
+	}
+}
+
 int astkit_node_minit(INIT_FUNC_ARGS) {
 	zend_class_entry ce;
 
@@ -334,5 +380,17 @@ int astkit_node_minit(INIT_FUNC_ARGS) {
 #undef AST_DECL
 #undef AST
 
+	old_compile_string = zend_compile_string;
+	zend_compile_string = astkit_compile_string;
+
+	old_ast_process = zend_ast_process;
+	zend_ast_process = astkit_ast_process;
+
+	return SUCCESS;
+}
+
+int astkit_node_mshutdown(SHUTDOWN_FUNC_ARGS) {
+	zend_compile_string = old_compile_string;
+	zend_ast_process = old_ast_process;
 	return SUCCESS;
 }
