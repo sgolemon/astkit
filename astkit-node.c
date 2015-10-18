@@ -6,6 +6,7 @@
 
 zend_class_entry* astkit_node_ce = NULL;
 static zend_object_handlers astkit_object_handlers;
+static void astkit_ast_destroy(zend_ast* ast);
 
 /* {{{ proto string AstKit::kindName(int $kind) */
 ZEND_BEGIN_ARG_INFO(AstKind_kindName_arginfo, 0)
@@ -206,8 +207,86 @@ static PHP_METHOD(AstKit, export) {
 	} else {
 		RETURN_NULL();
 	}
-}
-/* }}} */
+} /* }}} */
+
+/* {{{ proto void AstKit::graft(int $child, mixed $treeOrValue) */
+ZEND_BEGIN_ARG_INFO(AstKit_graft_arginfo, 0)
+	ZEND_ARG_INFO(0, child)
+	ZEND_ARG_INFO(0, treeOrValue)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(AstKit, graft) {
+	astkit_object* objval = ASTKIT_FETCH_OBJ(getThis());
+	zend_long child;
+	zval *value;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "lz", &child, &value) == FAILURE) {
+		return;
+	}
+
+	astkit_graft(objval, child, value);
+} /* }}} */
+
+/* {{{ astkit_graft */
+void astkit_graft(astkit_object* objval, int child, zval* value) {
+	zend_arena *old_arena;
+	zend_ast *new_child;
+
+	if (child < 0) {
+		php_error_docref(NULL, E_WARNING, "Invalid child number, must be positive integer");
+		return;
+	}
+
+	old_arena = CG(ast_arena);
+	CG(ast_arena) = objval->tree->arena;
+
+	if ((Z_TYPE_P(value) == IS_OBJECT) &&
+	    instanceof_function(Z_OBJCE_P(value), astkit_node_ce)) {
+		new_child = astkit_ast_copy(ASTKIT_FETCH_OBJ(value)->node);
+	} else if (Z_TYPE_P(value) != IS_OBJECT) {
+		new_child = zend_ast_create_zval(value);
+	} else {
+		php_error_docref(NULL, E_WARNING, "Unable t graft objects into AST nodes");
+		CG(ast_arena) = old_arena;
+		return;
+	}
+	CG(ast_arena) = old_arena;
+
+	if ((objval->node->kind >> ZEND_AST_SPECIAL_SHIFT) == 1) {
+		/* Don't allow grafting decls, it gets... weird.  There are better ways, honey. */
+		php_error_docref(NULL, E_WARNING, "Unable to graft onto Decl nodes directly.");
+		return;
+	} else if ((objval->node->kind >> ZEND_AST_IS_LIST_SHIFT) == 1) {
+		zend_ast_list *list = zend_ast_get_list(objval->node);
+		zend_bool append = child >= list->children;
+		if (append) {
+			/* Append new child */
+			zend_ast_list_add(objval->node, new_child);
+		} else {
+			/* Replace existing child */
+			old_arena = CG(ast_arena);
+			CG(ast_arena) = objval->tree->arena;
+			astkit_ast_destroy(list->child[child]);
+			CG(ast_arena) = old_arena;
+
+			list->child[child] = new_child;
+		}
+	} else {
+		int numChildren = objval->node->kind >> ZEND_AST_NUM_CHILDREN_SHIFT;
+		if (child >= numChildren) {
+			zend_ast_destroy(new_child);
+			php_error_docref(NULL, E_WARNING, "Node only has %d child slots, cannot graft onto child %d",
+			                 numChildren, child);
+			return;
+		}
+
+		old_arena = CG(ast_arena);
+		CG(ast_arena) = objval->tree->arena;
+		astkit_ast_destroy(objval->node->child[child]);
+		CG(ast_arena) = old_arena;
+
+		objval->node->child[child] = new_child;
+	}
+} /* }}} */
 
 /* {{{ proto mixed AstKit::execute() */
 static PHP_METHOD(AstKit, execute) {
@@ -238,6 +317,7 @@ static zend_function_entry astkit_node_methods[] = {
 	PHP_ME(AstKit, getChild, AstKit_getChild_arginfo, ZEND_ACC_PUBLIC)
 
 	PHP_ME(AstKit, export, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(AstKit, graft, AstKit_graft_arginfo, ZEND_ACC_PUBLIC)
 	PHP_ME(AstKit, execute, NULL, ZEND_ACC_PUBLIC)
 	PHP_FE_END
 };
@@ -293,6 +373,46 @@ zend_ast* astkit_ast_copy(zend_ast* ast) {
 	}
 }
 
+static void astkit_ast_destroy(zend_ast* ast) {
+	zval *obj;
+	if (!ast) return;
+	obj = zend_hash_index_find(&ASTKITG(cache), (zend_ulong)ast);
+	if (obj) {
+		/* Owned by an object somewhere, mark it as orphaned from the root */
+		zval undef;
+		ZVAL_UNDEF(&undef);
+		zend_hash_index_add(&ASTKITG(orphan), (zend_ulong)ast, &undef);
+		return;
+	}
+
+	if (ast->kind == ZEND_AST_ZVAL) {
+		/* No children to scan through */
+	} else if (ast->kind == ZEND_AST_ZNODE) {
+		php_error_docref(NULL, E_WARNING, "Encountered unexpected AST_ZNODE");
+	} else if (zend_ast_is_list(ast)) {
+		zend_ast_list *list = zend_ast_get_list(ast);
+		uint32_t i;
+		for (i = 0; i < list->children; ++i) {
+			astkit_ast_destroy(list->child[i]);
+		}
+		list->children = 0;
+	} else if (ast->kind < (1 << ZEND_AST_IS_LIST_SHIFT)) {
+		uint32_t i;
+		zend_ast_decl *decl = (zend_ast_decl*)ast;
+		for (i = 0; i < 4; i++) {
+			astkit_ast_destroy(decl->child[i]);
+			decl->child[i] = NULL;
+		}
+	} else {
+		uint32_t i, children = zend_ast_get_num_children(ast);
+		for (i = 0; i < children; i++) {
+			astkit_ast_destroy(ast->child[i]);
+			ast->child[i] = NULL;
+		}
+	}
+	zend_ast_destroy(ast);
+}
+
 static zend_object* astkit_node_create(zend_class_entry* ce) {
 	astkit_object* object = ecalloc(1, sizeof(astkit_object));
 	zend_object_std_init(&(object->std), ce);
@@ -319,6 +439,10 @@ static zend_object* astkit_node_clone(zval *srcObj) {
 static void astkit_node_free(zend_object* obj) {
 	astkit_object* object = (astkit_object*)obj;
 	zend_hash_index_del(&ASTKITG(cache), (zend_ulong)object->node);
+	if (zend_hash_index_exists(&ASTKITG(orphan), (zend_ulong)object->node)) {
+		astkit_ast_destroy(object->node);
+		zend_hash_index_del(&ASTKITG(orphan), (zend_ulong)object->node);
+	}
 	if (object->tree) {
 		if ((--object->tree->refcount) <= 0) {
 			zend_ast_destroy(object->tree->root);

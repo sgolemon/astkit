@@ -48,10 +48,28 @@ static PHP_METHOD(AstKitList, getChild) {
 	astkit_create_object(return_value, listNode->child[child], objval->tree);
 } /* }}} */
 
+/* {{{ proto void AstKitList::apend(AstKit|mixed $node) */
+ZEND_BEGIN_ARG_INFO(AstKitList_append_arginfo, 0)
+	ZEND_ARG_INFO(0, node)
+ZEND_END_ARG_INFO()
+static PHP_METHOD(AstKitList, append) {
+	astkit_object* objval = ASTKIT_FETCH_OBJ(getThis());
+	zend_ast_list* listNode = (zend_ast_list*)objval->node;
+	zval *node;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "z", &node) == FAILURE) {
+		return;
+	}
+
+	astkit_graft(objval, listNode->children, node);
+} /* }}} */
+
+
 static zend_function_entry astkit_list_methods[] = {
 	PHP_ME(AstKitList, __construct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
 	PHP_ME(AstKitList, numChildren, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(AstKitList, getChild, AstKitList_getChild_arginfo, ZEND_ACC_PUBLIC)
+	PHP_ME(AstKitList, append, AstKitList_append_arginfo, ZEND_ACC_PUBLIC)
 	PHP_FE_END
 };
 

@@ -108,7 +108,8 @@ static PHP_GINIT_FUNCTION(astkit) {
 #endif
 	astkit_globals->hijack_ast = NULL;
 	astkit_globals->hijack_ast_arena = NULL;
-	zend_hash_init(&(astkit_globals->cache), 32, NULL, NULL, 1);
+	zend_hash_init(&(astkit_globals->cache),  32, NULL, NULL, 1);
+	zend_hash_init(&(astkit_globals->orphan),  8, NULL, NULL, 1);
 }
 /* }}} */
 

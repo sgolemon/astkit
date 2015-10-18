@@ -34,6 +34,9 @@ ZEND_BEGIN_MODULE_GLOBALS(astkit)
 
 	/* Cache of zend_ast* nodes to object instances */
 	HashTable cache;
+
+	/* Nodes which are no longer attached to their root */
+	HashTable orphan;
 ZEND_END_MODULE_GLOBALS(astkit)
 
 #if defined(ZTS) && defined(COMPILE_DL_ASTKIT)
@@ -51,6 +54,7 @@ extern zend_class_entry* astkit_node_ce;
 int astkit_node_minit(INIT_FUNC_ARGS);
 int astkit_node_mshutdown(SHUTDOWN_FUNC_ARGS);
 zend_ast* astkit_ast_copy(zend_ast* ast);
+void astkit_graft(astkit_object* objval, int child, zval* value);
 
 extern zend_class_entry* astkit_list_ce;
 int astkit_list_minit(INIT_FUNC_ARGS);
