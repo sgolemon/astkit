@@ -40,11 +40,20 @@ static void astkit_create_object_unexpected(zval* obj, zend_ast* node) {
 }
 
 void astkit_create_object(zval* obj, zend_ast* node, astkit_tree* tree) {
+	zval *cached_object;
 	zend_class_entry *ce = NULL;
+
 	if (!node) {
 		ZVAL_NULL(obj);
 		return;
 	}
+
+	cached_object = zend_hash_index_find(&ASTKITG(cache), (zend_ulong)node);
+	if (cached_object) {
+		ZVAL_COPY(obj, cached_object);
+		return;
+	}
+
 	switch (node->kind) {
 #define AST(id) case ZEND_AST_##id: astkit_create_object_##id(obj, node); return;
 #define AST_DECL(id) case ZEND_AST_##id: ce = astkit_decl_ce; break;
@@ -65,6 +74,8 @@ void astkit_create_object(zval* obj, zend_ast* node, astkit_tree* tree) {
 	objval->node = node;
 	objval->tree = tree;
 	++tree->refcount;
+
+	zend_hash_index_add(&ASTKITG(cache), (zend_ulong)node, obj);
 }
 
 /* {{{ PHP_MINI_FUNCTION */
@@ -97,6 +108,7 @@ static PHP_GINIT_FUNCTION(astkit) {
 #endif
 	astkit_globals->hijack_ast = NULL;
 	astkit_globals->hijack_ast_arena = NULL;
+	zend_hash_init(&(astkit_globals->cache), 32, NULL, NULL, 1);
 }
 /* }}} */
 

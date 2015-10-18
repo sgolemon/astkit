@@ -31,6 +31,9 @@ ZEND_BEGIN_MODULE_GLOBALS(astkit)
          */
 	zend_ast* hijack_ast;
 	zend_arena* hijack_ast_arena;
+
+	/* Cache of zend_ast* nodes to object instances */
+	HashTable cache;
 ZEND_END_MODULE_GLOBALS(astkit)
 
 #if defined(ZTS) && defined(COMPILE_DL_ASTKIT)

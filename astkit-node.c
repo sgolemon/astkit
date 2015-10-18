@@ -318,6 +318,7 @@ static zend_object* astkit_node_clone(zval *srcObj) {
 
 static void astkit_node_free(zend_object* obj) {
 	astkit_object* object = (astkit_object*)obj;
+	zend_hash_index_del(&ASTKITG(cache), (zend_ulong)object->node);
 	if (object->tree) {
 		if ((--object->tree->refcount) <= 0) {
 			zend_ast_destroy(object->tree->root);
