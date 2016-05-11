@@ -23,6 +23,8 @@ typedef struct _astkit_object {
 
 #define ASTKIT_FETCH_OBJ(obj) ((astkit_object*)Z_OBJ_P(obj))
 
+void astkit_create_object(zval* obj, zend_ast* node, astkit_tree* tree);
+
 extern zend_class_entry* astkit_node_ce;
 int astkit_node_minit(INIT_FUNC_ARGS);
 
