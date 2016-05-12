@@ -2,7 +2,7 @@
 Basic statements in a psuedomain
 --FILE--
 <?php
-include('astkit-test.inc');
+include(__DIR__ . '/../util/astkit-dump.php');
 
 $ast = AstKit::parseString(<<<EOD
 echo "Hello World\n";
@@ -12,7 +12,7 @@ if (true) {
 EOD
 );
 
-astkit_test_dump($ast);
+astkit_dump($ast);
 --EXPECT--
 ZEND_AST_STMT_LIST
   ZEND_AST_STMT_LIST
