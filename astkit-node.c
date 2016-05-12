@@ -196,6 +196,19 @@ static PHP_METHOD(AstKit, getChild) {
 	astkit_create_object(return_value, objval->node->child[child], objval->tree);
 } /* }}} */
 
+/* {{{ proto string AstKit::export() */
+static PHP_METHOD(AstKit, export) {
+	astkit_object* objval = ASTKIT_FETCH_OBJ(getThis());
+	zend_string *ret = zend_ast_export("", objval->node, "");
+
+	if (ret) {
+		RETURN_STR(ret);
+	} else {
+		RETURN_NULL();
+	}
+}
+/* }}} */
+
 static zend_function_entry astkit_node_methods[] = {
 	PHP_ME(AstKit, kindName, AstKind_kindName_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
 	PHP_ME(AstKit, parseString, AstKind_parseString_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
@@ -207,6 +220,8 @@ static zend_function_entry astkit_node_methods[] = {
 	PHP_ME(AstKit, getLine, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(AstKit, numChildren, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(AstKit, getChild, AstKit_getChild_arginfo, ZEND_ACC_PUBLIC)
+
+	PHP_ME(AstKit, export, NULL, ZEND_ACC_PUBLIC)
 	PHP_FE_END
 };
 
