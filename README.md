@@ -41,6 +41,19 @@ class AstKit {
                                    int $options = 0): ?AstKit;
 
   /**
+   * Graft an AST subtree into position
+   * @param int $child - Child number to graft onto, existing node will be destroyed
+   * @param mixed $treeOrValue - AstKit node or ZEND_AST_ZVAL value to emplace
+   */
+  public function graft(int $child, $treeOrValue): void;
+
+  /**
+   * Execute the current AST fragment
+   * @return - Result of fragment execution, as though it had been eval()'d
+   */
+  public function execute(): mixed;
+
+  /**
    * Get the ZEND_AST_* kind associated with this node
    */
   public function getId(): int;
@@ -78,7 +91,12 @@ class AstKit {
  * so the hasX()/getX() may be more useful
  * and less brittle.
  */
-class AstKitList extends AstKit {}
+class AstKitList extends AstKit {
+  /**
+   * Create a new, empty ZEND_AST_STMT_LIST node
+   */
+  public function __construct();
+}
 
 /**
  * Specialization of AstKit for declarations
