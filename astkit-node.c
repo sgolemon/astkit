@@ -507,6 +507,10 @@ int astkit_node_minit(INIT_FUNC_ARGS) {
 #undef AST_DECL
 #undef AST
 
+#define AST_CONST(id) zend_declare_class_constant_long(astkit_node_ce, #id, sizeof(#id) - 1, id);
+#include "constants.h"
+#undef AST_CONST
+
 	old_compile_string = zend_compile_string;
 	zend_compile_string = astkit_compile_string;
 
