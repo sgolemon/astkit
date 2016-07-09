@@ -26,36 +26,29 @@
 # error AstKit requires PHP version 7 or later
 #endif
 
-/* ZNODE is a special AST node which only appears in the compile stage */
-#define astkit_create_object_ZNODE astkit_create_object_unexpected
-
-static void astkit_create_object_ZVAL(zval* obj, zend_ast* node) {
-	zval* val = zend_ast_get_zval(node);
-	ZVAL_ZVAL(obj, val, 1, 0);
-}
-
-static void astkit_create_object_unexpected(zval* obj, zend_ast* node) {
-	php_error_docref(NULL, E_WARNING, "Unknown AST node type: %d", (int)node->kind);
-	ZVAL_FALSE(obj);
-}
-
-void astkit_create_object(zval* obj, zend_ast* node, astkit_tree* tree) {
+void astkit_create_object(zval* return_value, zend_ast* node, astkit_tree* tree, zend_bool zval_as_value) {
 	zval *cached_object;
 	zend_class_entry *ce = NULL;
 
 	if (!node) {
-		ZVAL_NULL(obj);
-		return;
+		RETURN_NULL();
 	}
 
 	cached_object = zend_hash_index_find(&ASTKITG(cache), (zend_ulong)node);
 	if (cached_object) {
-		ZVAL_COPY(obj, cached_object);
-		return;
+		RETURN_ZVAL(cached_object, 1, 0);
 	}
 
 	switch (node->kind) {
-#define AST(id) case ZEND_AST_##id: astkit_create_object_##id(obj, node); return;
+		case ZEND_AST_ZVAL:
+			if (zval_as_value) {
+				zval* val = zend_ast_get_zval(node);
+				RETURN_ZVAL(val, 1, 0);
+				return;
+			}
+			ce = astkit_zval_ce;
+			break;
+#define AST(id)
 #define AST_DECL(id) case ZEND_AST_##id: ce = astkit_decl_ce; break;
 #define AST_LIST(id) case ZEND_AST_##id: ce = astkit_list_ce; break;
 #define AST_CHILD(id, children) case ZEND_AST_##id: ce = astkit_node_ce; break;
@@ -65,24 +58,26 @@ void astkit_create_object(zval* obj, zend_ast* node, astkit_tree* tree) {
 #undef AST_DECL
 #undef AST
 		default:
-			astkit_create_object_unexpected(obj, node);
+			php_error_docref(NULL, E_WARNING, "Unknown AST node type: %d", (int)node->kind);
+			RETURN_FALSE;
 	}
 
 	astkit_object* objval;
-	object_init_ex(obj, ce);
-	objval = ASTKIT_FETCH_OBJ(obj);
+	object_init_ex(return_value, ce);
+	objval = ASTKIT_FETCH_OBJ(return_value);
 	objval->node = node;
 	objval->tree = tree;
 	++tree->refcount;
 
-	zend_hash_index_add(&ASTKITG(cache), (zend_ulong)node, obj);
+	zend_hash_index_add(&ASTKITG(cache), (zend_ulong)node, return_value);
 }
 
 /* {{{ PHP_MINI_FUNCTION */
 PHP_MINIT_FUNCTION(astkit) {
 	return ((astkit_node_minit(INIT_FUNC_ARGS_PASSTHRU) == SUCCESS) &&
 		(astkit_list_minit(INIT_FUNC_ARGS_PASSTHRU) == SUCCESS) &&
-		(astkit_decl_minit(INIT_FUNC_ARGS_PASSTHRU) == SUCCESS))
+		(astkit_decl_minit(INIT_FUNC_ARGS_PASSTHRU) == SUCCESS) &&
+		(astkit_zval_minit(INIT_FUNC_ARGS_PASSTHRU) == SUCCESS))
 	       ? SUCCESS : FAILURE;
 } /* }}} */
 

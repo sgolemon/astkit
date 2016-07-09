@@ -7,16 +7,18 @@ static PHP_METHOD(AstKitDecl, numChildren) {
 	RETURN_LONG(3);
 } /* }}} */
 
-/* {{{ proto object AstKitDecl::getChild(int child) */
+/* {{{ proto object AstKitDecl::getChild(int child[, bool zval_as_value = true]) */
 ZEND_BEGIN_ARG_INFO(AstKitDecl_getChild_arginfo, 0)
 	ZEND_ARG_INFO(0, child)
+	ZEND_ARG_INFO(0, zval_as_value)
 ZEND_END_ARG_INFO()
 static PHP_METHOD(AstKitDecl, getChild) {
 	astkit_object* objval = ASTKIT_FETCH_OBJ(getThis());
 	zend_ast_decl* declNode = (zend_ast_decl*)objval->node;
 	zend_long child;
+	zend_bool zval_as_value = 1;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "l", &child) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "l|b", &child, &zval_as_value) == FAILURE) {
 		return;
 	}
 
@@ -27,7 +29,7 @@ static PHP_METHOD(AstKitDecl, getChild) {
 		return;
 	}
 	if (declNode->child[child]) {
-		astkit_create_object(return_value, declNode->child[child], objval->tree);
+		astkit_create_object(return_value, declNode->child[child], objval->tree, zval_as_value);
 	}
 } /* }}} */
 
@@ -74,7 +76,7 @@ static PHP_METHOD(AstKitDecl, hasParams) {
 static PHP_METHOD(AstKitDecl, getParams) {
 	astkit_object* objval = ASTKIT_FETCH_OBJ(getThis());
 	zend_ast_decl* declNode = (zend_ast_decl*)objval->node;
-	astkit_create_object(return_value, declNode->child[0], objval->tree);
+	astkit_create_object(return_value, declNode->child[0], objval->tree, 0);
 } /* }}} */
 
 /* {{{ proto bool AstKitDecl::hasUse() */
@@ -88,7 +90,7 @@ static PHP_METHOD(AstKitDecl, hasUse) {
 static PHP_METHOD(AstKitDecl, getUse) {
 	astkit_object* objval = ASTKIT_FETCH_OBJ(getThis());
 	zend_ast_decl* declNode = (zend_ast_decl*)objval->node;
-	astkit_create_object(return_value, declNode->child[1], objval->tree);
+	astkit_create_object(return_value, declNode->child[1], objval->tree, 0);
 } /* }}} */
 
 /* {{{ proto bool AstKitDecl::hasStatements() */
@@ -102,7 +104,7 @@ static PHP_METHOD(AstKitDecl, hasStatements) {
 static PHP_METHOD(AstKitDecl, getStatements) {
 	astkit_object* objval = ASTKIT_FETCH_OBJ(getThis());
 	zend_ast_decl* declNode = (zend_ast_decl*)objval->node;
-	astkit_create_object(return_value, declNode->child[2], objval->tree);
+	astkit_create_object(return_value, declNode->child[2], objval->tree, 0);
 } /* }}} */
 
 static zend_function_entry astkit_decl_methods[] = {

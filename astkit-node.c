@@ -83,7 +83,7 @@ static PHP_METHOD(AstKit, parseString) {
 	CG(ast) = NULL;
 	CG(ast_arena) = NULL;
 	zend_restore_lexical_state(&original_lex_state);
-	astkit_create_object(return_value, tree->root, tree);
+	astkit_create_object(return_value, tree->root, tree, 0);
 } /* }}} */
 
 /* {{{ proto AstKitList AstKit::parseFile(string $filename) */
@@ -140,7 +140,7 @@ static PHP_METHOD(AstKit, parseFile) {
 	CG(ast_arena) = NULL;
 	zend_restore_lexical_state(&original_lex_state);
 	zend_destroy_file_handle(&file_handle);
-	astkit_create_object(return_value, tree->root, tree);
+	astkit_create_object(return_value, tree->root, tree, 0);
 } /* }}} */
 
 /* {{{ proto void AstKit::__construct() */
@@ -174,16 +174,18 @@ static PHP_METHOD(AstKit, numChildren) {
 	RETURN_LONG(objval->node->kind >> ZEND_AST_NUM_CHILDREN_SHIFT);
 } /* }}} */
 
-/* {{{ proto mixed AstKit::getChild(int $child) */
+/* {{{ proto mixed AstKit::getChild(int $child[, bool $zval_as_value = true]) */
 ZEND_BEGIN_ARG_INFO(AstKit_getChild_arginfo, 0)
 	ZEND_ARG_INFO(0, child)
+	ZEND_ARG_INFO(0, zval_as_value)
 ZEND_END_ARG_INFO()
 static PHP_METHOD(AstKit, getChild) {
 	astkit_object* objval = ASTKIT_FETCH_OBJ(getThis());
 	int numChildren = objval->node->kind >> ZEND_AST_NUM_CHILDREN_SHIFT;
 	zend_long child;
+	zend_bool zval_as_value = 1;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "l", &child) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "l|b", &child, &zval_as_value) == FAILURE) {
 		return;
 	}
 
@@ -194,7 +196,7 @@ static PHP_METHOD(AstKit, getChild) {
 		return;
 	}
 
-	astkit_create_object(return_value, objval->node->child[child], objval->tree);
+	astkit_create_object(return_value, objval->node->child[child], objval->tree, zval_as_value);
 } /* }}} */
 
 /* {{{ proto string AstKit::export() */

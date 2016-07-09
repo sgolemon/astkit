@@ -48,7 +48,7 @@ ZEND_EXTERN_MODULE_GLOBALS(astkit)
 
 #define ASTKIT_FETCH_OBJ(obj) ((astkit_object*)Z_OBJ_P(obj))
 
-void astkit_create_object(zval* obj, zend_ast* node, astkit_tree* tree);
+void astkit_create_object(zval*, zend_ast*, astkit_tree*, zend_bool);
 
 extern zend_class_entry* astkit_node_ce;
 int astkit_node_minit(INIT_FUNC_ARGS);
@@ -61,5 +61,8 @@ int astkit_list_minit(INIT_FUNC_ARGS);
 
 extern zend_class_entry* astkit_decl_ce;
 int astkit_decl_minit(INIT_FUNC_ARGS);
+
+extern zend_class_entry* astkit_zval_ce;
+int astkit_zval_minit(INIT_FUNC_ARGS);
 
 #endif

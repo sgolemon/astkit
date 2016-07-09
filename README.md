@@ -75,8 +75,10 @@ class AstKit {
 
   /**
    * Get one of this node's children [0, numChildren() - 1]
+   * @param int $child - Child to fetch
+   * @param bool $asValue - Whether or not to return simple PHP values (true) or instances of AstKitZval (false)
    */
-  public function getChild(int $child): ?AstKit;
+  public function getChild(int $child, bool $asValue = true);
 }
 
 /**
@@ -151,5 +153,12 @@ class AstKitDecl extends AstKit {
    * Get the statements associated with this declaration
    */
   public function getStatements(): ?AstKit;
+}
+
+class AstKitZval extends AstKit {
+  /**
+   * Returns the PHP Value for this ZEND_AST_ZVAL node
+   */
+  public function getValue();
 }
 ```
