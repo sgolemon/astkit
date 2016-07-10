@@ -53,7 +53,7 @@ static PHP_METHOD(AstKit, parseString) {
 	}
 
 	zend_save_lexical_state(&original_lex_state);
-	ZVAL_NEW_STR(&source, source_string);
+	ZVAL_STR_COPY(&source, source_string);
 	if (zend_prepare_string_for_scanning(&source, "AstKit::parseString()") == FAILURE) {
 		zend_restore_lexical_state(&original_lex_state);
 		RETURN_FALSE;
@@ -67,6 +67,8 @@ static PHP_METHOD(AstKit, parseString) {
 		/* parse error */
 		zend_ast_destroy(CG(ast));
 		zend_arena_destroy(CG(ast_arena));
+		CG(ast) = NULL;
+		CG(ast_arena) = NULL;
 		zend_restore_lexical_state(&original_lex_state);
 		RETURN_FALSE;
 	}
