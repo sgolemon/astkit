@@ -22,7 +22,7 @@ static PHP_METHOD(AstKitDecl, getChild) {
 		return;
 	}
 
-	if ((child < 0) || (child >= 3)) {
+	if ((child < 0) || (child > 3)) {
 		php_error_docref(NULL, E_WARNING,
 		  "Invalid child " ZEND_LONG_FMT ", current node has %d children",
 		  child, 3);
