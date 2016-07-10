@@ -416,18 +416,20 @@ static void astkit_ast_destroy(zend_ast* ast) {
 }
 
 static zend_object* astkit_node_create(zend_class_entry* ce) {
-	astkit_object* object = ecalloc(1, sizeof(astkit_object));
-	zend_object_std_init(&(object->std), ce);
-	object->std.handlers = &astkit_object_handlers;
-	object_properties_init(&(object->std), ce);
-	return (zend_object*)object;
+	astkit_object* object = ecalloc(1, sizeof(astkit_object) + zend_object_properties_size(ce));
+	zend_object* ret = astkit_to_zend_object(object);
+	zend_object_std_init(ret, ce);
+	ret->handlers = &astkit_object_handlers;
+	object_properties_init(ret, ce);
+	return ret;
 }
 
 static zend_object* astkit_node_clone(zval *srcObj) {
 	zend_arena *old_arena = CG(ast_arena);
 	astkit_object* src = ASTKIT_FETCH_OBJ(srcObj);
-	astkit_object* dest = (astkit_object*)astkit_node_create(Z_OBJCE_P(srcObj));
-	zend_objects_clone_members(&(dest->std), &(src->std));
+	astkit_object* dest = astkit_from_zend_object(astkit_node_create(Z_OBJCE_P(srcObj)));
+	zend_object* ret = astkit_to_zend_object(dest);
+	zend_objects_clone_members(ret, astkit_to_zend_object(src));
 
 	dest->tree = emalloc(sizeof(astkit_tree));
 	dest->tree->arena = CG(ast_arena) = zend_arena_create(1024 * 32);
@@ -435,11 +437,11 @@ static zend_object* astkit_node_clone(zval *srcObj) {
 	dest->tree->root = dest->node = astkit_ast_copy(src->node);
 
 	CG(ast_arena) = old_arena;
-	return (zend_object*)dest;
+	return ret;
 }
 
 static void astkit_node_free(zend_object* obj) {
-	astkit_object* object = (astkit_object*)obj;
+	astkit_object* object = astkit_from_zend_object(obj);
 	zend_hash_index_del(&ASTKITG(cache), (zend_ulong)object->node);
 	if (zend_hash_index_exists(&ASTKITG(orphan), (zend_ulong)object->node)) {
 		astkit_ast_destroy(object->node);
@@ -488,6 +490,7 @@ int astkit_node_minit(INIT_FUNC_ARGS) {
 	zend_class_entry ce;
 
 	memcpy(&astkit_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
+    astkit_object_handlers.offset = XtOffsetOf(astkit_object, std);
 	astkit_object_handlers.free_obj = astkit_node_free;
 	astkit_object_handlers.clone_obj = astkit_node_clone;
 
