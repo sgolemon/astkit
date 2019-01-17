@@ -77,4 +77,8 @@ static inline astkit_object* ASTKIT_FETCH_OBJ(zval *obj) {
 	return astkit_from_zend_object(Z_OBJ_P(obj));
 }
 
+#ifndef ZEND_ACC_CTOR
+#define ZEND_ACC_CTOR 0
+#endif
+
 #endif
